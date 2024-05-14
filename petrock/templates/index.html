@@ -9,8 +9,13 @@
 <body>
     
     <div id="rock_wall">
-        <div id="rock_choices"></div>
-        <div id="rock_desc">This petrock is {{ vibe }}; its purpose is {{ purpose }}.</div>
+        <div id="rock_choices">
+            <img src="{{ url_for('static', filename='images/cool.png') }}" alt="Cool" id="cool" class="personality-choice" onclick="selectPersonality('cool')">
+            <img src="{{ url_for('static', filename='images/normal.png') }}" alt="Normal" id="normal" class="personality-choice selected" onclick="selectPersonality('normal')">
+            <img src="{{ url_for('static', filename='images/angry.png') }}" alt="Angry" id="angry" class="personality-choice" onclick="selectPersonality('angry')">
+            
+        </div>
+        <div id="rock_desc">This petrock is <span id="personality">normal</span>; its purpose is making people laugh.</div>
     </div>
     <div class="container">
         
@@ -24,10 +29,10 @@
 
             <input type="file" name = "upload" accept="image/*" id="fileInput" >
             
-            <button id="snap">Capture for the rock</button>
-        
-               
-          
+            <button id="snap">Capture for the rock</button>              
+            <button id="process">Ask The Rock</button>
+
+
         </div> <!-- End of image_upload. -->
 
              <!-- Output. -->
@@ -51,6 +56,22 @@
         </div>
 
     <script>
+              let selectedPersonality = 'normal';
+
+              function selectPersonality(personality) {
+                    selectedPersonality = personality;
+                    document.getElementById('personality').textContent = personality;
+
+                    const choices = document.querySelectorAll('.personality-choice');
+                    choices.forEach(choice => {
+                        if (choice.id === personality) {
+                            choice.classList.add('selected');
+                        } else {
+                            choice.classList.remove('selected');
+                        }
+                    });
+                }  
+
         //starts webcam
         async function startWebcam() {
             try {
@@ -92,8 +113,6 @@
             
         });
 
-
-
         //Webcam image
         const video = document.getElementById('video');
         const snap = document.getElementById("snap");
@@ -120,16 +139,18 @@
         captionText.textContent = '';
         responseText.textContent ='';
             const imageData = canvas.toDataURL('image/jpeg');
-            
 
-            loadingCaptionGif.style.display = 'block';
+            loadingGif.style.display = 'block';
+            captionText.textContent = "";
+            responseText.textContent = "";
+
             
             fetch('/handle_caption', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ image: imageData })
+                body: JSON.stringify({ image: imageData, personality: selectedPersonality })
             })
 
             .then(response => response.json())
@@ -137,6 +158,7 @@
                     captionText.textContent = `Caption: ${data.caption}`;
                     loadingCaptionGif.style.display = 'none';
                         //add fetch that sends caption to the server to get rock response
+
 
                         loadingResponseGif.style.display = 'block';
                        return fetch('/handle_response', {
